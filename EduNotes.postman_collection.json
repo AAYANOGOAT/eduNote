@@ -1,0 +1,377 @@
+{
+  "info": {
+    "name": "EduNotes API",
+    "description": "Postman collection for testing EduNotes microservices with all 3 roles: admin, formateur, stagiaire.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_postman_id": "edunotes-collection-2024"
+  },
+  "variable": [
+    { "key": "AUTH_URL", "value": "http://localhost:3001" },
+    { "key": "USERS_URL", "value": "http://localhost:3002" },
+    { "key": "NOTES_URL", "value": "http://localhost:3003" },
+    { "key": "NOTIF_URL", "value": "http://localhost:3004" },
+    { "key": "ADMIN_TOKEN", "value": "" },
+    { "key": "FORMATEUR_TOKEN", "value": "" },
+    { "key": "STAGIAIRE_TOKEN", "value": "" },
+    { "key": "STAGIAIRE_ID", "value": "" },
+    { "key": "NOTE_ID", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "🔐 Auth Service",
+      "item": [
+        {
+          "name": "Register Admin",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{AUTH_URL}}/auth/register", "host": ["{{AUTH_URL}}"], "path": ["auth", "register"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Super Admin\",\n  \"email\": \"admin@edunotes.com\",\n  \"password\": \"Admin1234!\",\n  \"role\": \"admin\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Register Formateur",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{AUTH_URL}}/auth/register", "host": ["{{AUTH_URL}}"], "path": ["auth", "register"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Mohamed Formateur\",\n  \"email\": \"formateur@edunotes.com\",\n  \"password\": \"Formateur123!\",\n  \"role\": \"formateur\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Register Stagiaire",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{AUTH_URL}}/auth/register", "host": ["{{AUTH_URL}}"], "path": ["auth", "register"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Youssef Stagiaire\",\n  \"email\": \"stagiaire@edunotes.com\",\n  \"password\": \"Stagiaire123!\",\n  \"role\": \"stagiaire\",\n  \"filiere\": \"Développement Web\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Login as Admin",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.token) pm.collectionVariables.set('ADMIN_TOKEN', res.token);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{AUTH_URL}}/auth/login", "host": ["{{AUTH_URL}}"], "path": ["auth", "login"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@edunotes.com\",\n  \"password\": \"Admin1234!\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Login as Formateur",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.token) pm.collectionVariables.set('FORMATEUR_TOKEN', res.token);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{AUTH_URL}}/auth/login", "host": ["{{AUTH_URL}}"], "path": ["auth", "login"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"formateur@edunotes.com\",\n  \"password\": \"Formateur123!\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Login as Stagiaire",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.token) pm.collectionVariables.set('STAGIAIRE_TOKEN', res.token);",
+                  "if (res.user && res.user.id) pm.collectionVariables.set('STAGIAIRE_ID', res.user.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{AUTH_URL}}/auth/login", "host": ["{{AUTH_URL}}"], "path": ["auth", "login"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"stagiaire@edunotes.com\",\n  \"password\": \"Stagiaire123!\"\n}"
+            }
+          }
+        },
+        {
+          "name": "GET /auth/me (Authenticated)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{ADMIN_TOKEN}}" }],
+            "url": { "raw": "{{AUTH_URL}}/auth/me", "host": ["{{AUTH_URL}}"], "path": ["auth", "me"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "👤 User Service (Admin)",
+      "item": [
+        {
+          "name": "GET /users – List All (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{ADMIN_TOKEN}}" }],
+            "url": { "raw": "{{USERS_URL}}/users", "host": ["{{USERS_URL}}"], "path": ["users"] }
+          }
+        },
+        {
+          "name": "GET /users?role=stagiaire (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{ADMIN_TOKEN}}" }],
+            "url": {
+              "raw": "{{USERS_URL}}/users?role=stagiaire",
+              "host": ["{{USERS_URL}}"],
+              "path": ["users"],
+              "query": [{ "key": "role", "value": "stagiaire" }]
+            }
+          }
+        },
+        {
+          "name": "POST /users – Create Stagiaire (Admin)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{ADMIN_TOKEN}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{USERS_URL}}/users", "host": ["{{USERS_URL}}"], "path": ["users"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Aïcha Stagiaire 2\",\n  \"email\": \"aicha@edunotes.com\",\n  \"password\": \"Aicha1234!\",\n  \"role\": \"stagiaire\",\n  \"filiere\": \"Réseau Informatique\"\n}"
+            }
+          }
+        },
+        {
+          "name": "PUT /users/:id – Update (Admin)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{ADMIN_TOKEN}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{USERS_URL}}/users/{{STAGIAIRE_ID}}", "host": ["{{USERS_URL}}"], "path": ["users", "{{STAGIAIRE_ID}}"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"filiere\": \"Intelligence Artificielle\"\n}"
+            }
+          }
+        },
+        {
+          "name": "DELETE /users/:id – Delete (Admin)",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{ADMIN_TOKEN}}" }],
+            "url": { "raw": "{{USERS_URL}}/users/REPLACE_WITH_ID", "host": ["{{USERS_URL}}"], "path": ["users", "REPLACE_WITH_ID"] }
+          }
+        },
+        {
+          "name": "❌ GET /users – Stagiaire Denied (403)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{STAGIAIRE_TOKEN}}" }],
+            "url": { "raw": "{{USERS_URL}}/users", "host": ["{{USERS_URL}}"], "path": ["users"] }
+          }
+        },
+        {
+          "name": "❌ GET /users – No Token (401)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{USERS_URL}}/users", "host": ["{{USERS_URL}}"], "path": ["users"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "📝 Notes Service",
+      "item": [
+        {
+          "name": "POST /notes – Add Note (Formateur)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.data && res.data._id) pm.collectionVariables.set('NOTE_ID', res.data._id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{FORMATEUR_TOKEN}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{NOTES_URL}}/notes", "host": ["{{NOTES_URL}}"], "path": ["notes"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"stagiaireId\": \"{{STAGIAIRE_ID}}\",\n  \"stagiaireName\": \"Youssef Stagiaire\",\n  \"module\": \"Développement Web\",\n  \"note\": 16.5,\n  \"commentaire\": \"Très bon travail\"\n}"
+            }
+          }
+        },
+        {
+          "name": "POST /notes – Add 2nd Note (Formateur)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{FORMATEUR_TOKEN}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{NOTES_URL}}/notes", "host": ["{{NOTES_URL}}"], "path": ["notes"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"stagiaireId\": \"{{STAGIAIRE_ID}}\",\n  \"stagiaireName\": \"Youssef Stagiaire\",\n  \"module\": \"Base de Données\",\n  \"note\": 13,\n  \"commentaire\": \"Bon niveau, peut s'améliorer\"\n}"
+            }
+          }
+        },
+        {
+          "name": "GET /notes/stagiaire/:id – Own Notes (Stagiaire)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{STAGIAIRE_TOKEN}}" }],
+            "url": { "raw": "{{NOTES_URL}}/notes/stagiaire/{{STAGIAIRE_ID}}", "host": ["{{NOTES_URL}}"], "path": ["notes", "stagiaire", "{{STAGIAIRE_ID}}"] }
+          }
+        },
+        {
+          "name": "GET /notes/bulletin/:id – Full Bulletin (Stagiaire)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{STAGIAIRE_TOKEN}}" }],
+            "url": { "raw": "{{NOTES_URL}}/notes/bulletin/{{STAGIAIRE_ID}}", "host": ["{{NOTES_URL}}"], "path": ["notes", "bulletin", "{{STAGIAIRE_ID}}"] }
+          }
+        },
+        {
+          "name": "GET /notes/bulletin/:id – Admin Views Stagiaire",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{ADMIN_TOKEN}}" }],
+            "url": { "raw": "{{NOTES_URL}}/notes/bulletin/{{STAGIAIRE_ID}}", "host": ["{{NOTES_URL}}"], "path": ["notes", "bulletin", "{{STAGIAIRE_ID}}"] }
+          }
+        },
+        {
+          "name": "PUT /notes/:id – Update Note (Formateur)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{FORMATEUR_TOKEN}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{NOTES_URL}}/notes/{{NOTE_ID}}", "host": ["{{NOTES_URL}}"], "path": ["notes", "{{NOTE_ID}}"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"note\": 18,\n  \"commentaire\": \"Note corrigée après vérification\"\n}"
+            }
+          }
+        },
+        {
+          "name": "DELETE /notes/:id – Delete Note (Admin)",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{ADMIN_TOKEN}}" }],
+            "url": { "raw": "{{NOTES_URL}}/notes/{{NOTE_ID}}", "host": ["{{NOTES_URL}}"], "path": ["notes", "{{NOTE_ID}}"] }
+          }
+        },
+        {
+          "name": "❌ POST /notes – Stagiaire Denied (403)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{STAGIAIRE_TOKEN}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{NOTES_URL}}/notes", "host": ["{{NOTES_URL}}"], "path": ["notes"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"stagiaireId\": \"fake\",\n  \"module\": \"Hack\",\n  \"note\": 20\n}"
+            }
+          }
+        },
+        {
+          "name": "❌ GET /notes/bulletin/:id – Stagiaire Views Another (403)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{STAGIAIRE_TOKEN}}" }],
+            "url": { "raw": "{{NOTES_URL}}/notes/bulletin/ANOTHER_STAGIAIRE_ID", "host": ["{{NOTES_URL}}"], "path": ["notes", "bulletin", "ANOTHER_STAGIAIRE_ID"] }
+          }
+        },
+        {
+          "name": "❌ DELETE /notes/:id – Formateur Denied (403)",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{FORMATEUR_TOKEN}}" }],
+            "url": { "raw": "{{NOTES_URL}}/notes/{{NOTE_ID}}", "host": ["{{NOTES_URL}}"], "path": ["notes", "{{NOTE_ID}}"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "❤️ Health Checks",
+      "item": [
+        {
+          "name": "Auth Service Health",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{AUTH_URL}}/health", "host": ["{{AUTH_URL}}"], "path": ["health"] }
+          }
+        },
+        {
+          "name": "User Service Health",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{USERS_URL}}/health", "host": ["{{USERS_URL}}"], "path": ["health"] }
+          }
+        },
+        {
+          "name": "Notes Service Health",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{NOTES_URL}}/health", "host": ["{{NOTES_URL}}"], "path": ["health"] }
+          }
+        },
+        {
+          "name": "Notification Service Health",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{NOTIF_URL}}/health", "host": ["{{NOTIF_URL}}"], "path": ["health"] }
+          }
+        }
+      ]
+    }
+  ]
+}

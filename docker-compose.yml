@@ -1,0 +1,136 @@
+version: "3.9"
+
+services:
+  # ─────────────── Message Broker ───────────────
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: edunotes-rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  # ─────────────── MongoDB Instances ────────────
+  mongo-auth:
+    image: mongo:7
+    container_name: edunotes-mongo-auth
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-auth-data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  mongo-users:
+    image: mongo:7
+    container_name: edunotes-mongo-users
+    ports:
+      - "27018:27017"
+    volumes:
+      - mongo-users-data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  mongo-notes:
+    image: mongo:7
+    container_name: edunotes-mongo-notes
+    ports:
+      - "27019:27017"
+    volumes:
+      - mongo-notes-data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  # ─────────────── Microservices ─────────────────
+  auth-service:
+    build: ./auth-service
+    container_name: edunotes-auth
+    ports:
+      - "3001:3001"
+    environment:
+      PORT: 3001
+      MONGO_URI: mongodb://mongo-auth:27017/auth_db
+      JWT_SECRET: ${JWT_SECRET:-supersecretjwtkey2024}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
+    depends_on:
+      mongo-auth:
+        condition: service_healthy
+    restart: on-failure
+
+  user-service:
+    build: ./user-service
+    container_name: edunotes-users
+    ports:
+      - "3002:3002"
+    environment:
+      PORT: 3002
+      MONGO_URI: mongodb://mongo-users:27017/users_db
+      JWT_SECRET: ${JWT_SECRET:-supersecretjwtkey2024}
+    depends_on:
+      mongo-users:
+        condition: service_healthy
+    restart: on-failure
+
+  notes-service:
+    build: ./notes-service
+    container_name: edunotes-notes
+    ports:
+      - "3003:3003"
+    environment:
+      PORT: 3003
+      MONGO_URI: mongodb://mongo-notes:27017/notes_db
+      JWT_SECRET: ${JWT_SECRET:-supersecretjwtkey2024}
+      RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672
+    depends_on:
+      mongo-notes:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    restart: on-failure
+
+  notification-service:
+    build: ./notification-service
+    container_name: edunotes-notifications
+    ports:
+      - "3004:3004"
+    environment:
+      PORT: 3004
+      RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    restart: on-failure
+
+  frontend:
+    image: nginx:alpine
+    container_name: edunotes-frontend
+    ports:
+      - "8080:80"
+    volumes:
+      - ./frontend:/usr/share/nginx/html:ro
+    depends_on:
+      - auth-service
+      - user-service
+      - notes-service
+    restart: on-failure
+
+volumes:
+  mongo-auth-data:
+  mongo-users-data:
+  mongo-notes-data:
