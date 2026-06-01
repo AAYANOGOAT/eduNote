@@ -59,7 +59,10 @@ const createUser = async (req, res) => {
       });
     }
 
-    const user = await User.create({ name, email, password, role, filiere });
+    const userPayload = { name, email, password, role, filiere };
+    if (req.body._id) userPayload._id = req.body._id;
+    
+    const user = await User.create(userPayload);
 
     return res.status(201).json({
       success: true,
